@@ -1,6 +1,13 @@
 # compiled output
 /dist
+*.tsbuildinfo
 /node_modules
+
+# RSA Keys
+keys/*.pem
+
+# Environment
+.env
 
 # Logs
 logs

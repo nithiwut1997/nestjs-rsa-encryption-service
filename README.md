@@ -1,73 +1,128 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="200" alt="Nest Logo" /></a>
-</p>
+# NestJS RSA Encryption Service
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+A NestJS 11 service that encrypts payloads with hybrid RSA/AES encryption and exposes Swagger documentation at `/api-docs`.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Requirements
 
-## Description
+- Node.js
+- Yarn
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
-
-## Installation
+## Install
 
 ```bash
-$ yarn install
+yarn install
 ```
 
-## Running the app
+The requested runtime packages are included:
 
 ```bash
-# development
-$ yarn run start
+yarn add @nestjs/swagger swagger-ui-express @nestjs/config class-validator class-transformer
+```
 
-# watch mode
-$ yarn run start:dev
+## RSA Key Setup
 
-# production mode
-$ yarn run start:prod
+The repository does not contain RSA private or public key material. Generate your own local key pair before starting the application.
+
+1. Visit https://cryptotools.net/rsagen
+2. Generate an RSA key pair (2048 bits or higher)
+3. Create:
+
+```text
+keys/
+├── public.pem
+└── private.pem
+```
+
+4. Save the generated public key to `keys/public.pem`
+5. Save the generated private key to `keys/private.pem`
+6. Copy `.env.example` to `.env`
+7. Start the application
+
+```bash
+cp .env.example .env
+yarn install
+yarn start:dev
+```
+
+The application loads RSA keys from the file paths configured in `.env`:
+
+```env
+PORT=3000
+RSA_PUBLIC_KEY_PATH=keys/public.pem
+RSA_PRIVATE_KEY_PATH=keys/private.pem
+```
+
+## Run
+
+```bash
+yarn start:dev
+```
+
+Swagger UI is available at:
+
+```text
+http://localhost:3000/api-docs
+```
+
+## Encrypt
+
+```bash
+curl -X POST http://localhost:3000/get-encrypt-data \
+  -H "Content-Type: application/json" \
+  -d "{\"payload\":\"hello world\"}"
+```
+
+Response:
+
+```json
+{
+  "successful": true,
+  "error_code": "",
+  "data": {
+    "data1": "<encrypted-key>",
+    "data2": "<iv>:<encrypted-payload>"
+  }
+}
+```
+
+## Decrypt
+
+Use the `data` object returned by `/get-encrypt-data` as the decrypt request body. Do not send the full encrypt response envelope.
+
+```bash
+curl -X POST http://localhost:3000/get-decrypt-data \
+  -H "Content-Type: application/json" \
+  -d "{\"data1\":\"<encrypted-key>\",\"data2\":\"<iv>:<encrypted-payload>\"}"
+```
+
+Response:
+
+```json
+{
+  "successful": true,
+  "error_code": "",
+  "data": {
+    "payload": "hello world"
+  }
+}
+```
+
+## Error Format
+
+All exceptions are normalized by the global exception filter:
+
+```json
+{
+  "successful": false,
+  "error_code": "<ERROR_CODE>",
+  "data": null
+}
 ```
 
 ## Test
 
 ```bash
-# unit tests
-$ yarn run test
-
-# e2e tests
-$ yarn run test:e2e
-
-# test coverage
-$ yarn run test:cov
+yarn test
+yarn test:cov
+yarn test:e2e
 ```
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://kamilmysliwiec.com)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](LICENSE).
